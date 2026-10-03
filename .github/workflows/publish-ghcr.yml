@@ -1,0 +1,91 @@
+name: Publish patched OME image
+
+on:
+  push:
+    branches: [codex/fly-rtp-mtu-1200]
+    paths:
+      - src/**
+      - cmake/**
+      - misc/**
+      - Dockerfile
+      - .github/workflows/publish-ghcr.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ghcr-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.repository == 'zacharyliu/OvenMediaEngine'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      IMAGE: ghcr.io/zacharyliu/ovenmediaengine
+    steps:
+      - name: Check out patched source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build using the upstream Dockerfile
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          build-args: |
+            USE_LOCAL=true
+            BUILD_JOBS=2
+          tags: |
+            ${{ env.IMAGE }}:v0.21.0-rtp1200
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=v0.21.0-rtp1200
+            org.opencontainers.image.licenses=AGPL-3.0-only
+          cache-from: type=gha,scope=ome-amd64
+          cache-to: type=gha,mode=max,scope=ome-amd64
+      - name: Smoke-test executable before publishing
+        run: |
+          # OME v0.21.0 deliberately exits 1 after printing its version.
+          status=0
+          docker run --rm --entrypoint /opt/ovenmediaengine/bin/ome_launcher.sh "$IMAGE:sha-$GITHUB_SHA" -v > version.txt 2>&1 || status=$?
+          cat version.txt
+          test "$status" -eq 1
+          grep -q '^OvenMediaEngine v0\.21\.0 ' version.txt
+      - name: Smoke-test origin startup
+        run: |
+          docker run -d --name ome-smoke -e OME_HOST_IP=127.0.0.1 "$IMAGE:sha-$GITHUB_SHA"
+          trap 'docker logs ome-smoke; docker rm -f ome-smoke' EXIT
+          for attempt in $(seq 1 30); do
+            if docker logs ome-smoke 2>&1 | grep -q 'OvenMediaEngine is initialized'; then
+              test "$(docker inspect --format '{{.State.Running}}' ome-smoke)" = true
+              exit 0
+            fi
+            test "$(docker inspect --format '{{.State.Running}}' ome-smoke)" = true
+            sleep 2
+          done
+          exit 1
+      - name: Publish version and commit tags
+        run: |
+          docker push "$IMAGE:sha-$GITHUB_SHA"
+          docker push "$IMAGE:v0.21.0-rtp1200"
+          {
+            echo '### Published patched OME image'
+            echo "Image: $IMAGE:v0.21.0-rtp1200"
+            echo "Commit tag: $IMAGE:sha-$GITHUB_SHA"
+            echo 'Use the registry digest in deployment Dockerfiles for an exact version.'
+          } >> "$GITHUB_STEP_SUMMARY"

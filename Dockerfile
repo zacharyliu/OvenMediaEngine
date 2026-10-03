@@ -53,6 +53,7 @@ ARG     USE_GPU
 ARG     OME_VERSION=v0.21.0
 ARG     USE_LOCAL=false
 ARG     STRIP=true
+ARG     BUILD_JOBS=2
 ARG     OME_ENABLE_JEMALLOC_LG_PAGE_MAX=false
 
 ENV     PREFIX=/opt/ovenmediaengine
@@ -93,7 +94,7 @@ RUN \
         fi; \
         cd ${TEMP_DIR} && \
         cmake -B build/Release -G Ninja -DCMAKE_BUILD_TYPE=Release ${build_options} && \
-        cmake --build build/Release
+        cmake --build build/Release --parallel ${BUILD_JOBS}
 
 RUN \
         if [ "${STRIP}" = "true" ] || [ "${STRIP}" = "1" ] || [ "${STRIP}" = "yes" ]; then \

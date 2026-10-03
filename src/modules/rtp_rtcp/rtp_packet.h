@@ -10,7 +10,7 @@
 #define RED_HEADER_SIZE				1
 #define EXTENSION_HEADER_SIZE		4
 #define ONE_BYTE_EXTENSION_ID		0xBEDE
-#define RTP_DEFAULT_MAX_PACKET_SIZE	1472
+#define RTP_DEFAULT_MAX_PACKET_SIZE	1200
 
 //  0                   1                   2                   3
 //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
