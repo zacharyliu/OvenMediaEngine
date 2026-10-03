@@ -23,8 +23,8 @@ It uses USE_LOCAL=true so the Dockerfile builds this checkout, including the
 patch, instead of cloning unmodified upstream source. GitHub Actions supplies
 GITHUB_TOKEN for publishing; no Docker Hub token or personal access token is
 needed. The executable is smoke-tested before either image tag is pushed.
-Action versions are pinned by commit. The package must be public for anonymous
-pulls from Fly or Docker; GitHub initially creates container packages as private.
+Action versions are pinned by commit. This package is public, and anonymous
+registry access has been verified. Keep it public for pulls from Fly without credentials.
 
 Run the workflow manually to rebuild, or push a source/build change on this
 branch. The version tag can move; deploy by registry digest to select an exact
@@ -47,7 +47,7 @@ from the official runtime image.
 Keep application settings in a separate, small deployment directory:
 
 ```dockerfile
-FROM ghcr.io/zacharyliu/ovenmediaengine@sha256:<published-digest>
+FROM ghcr.io/zacharyliu/ovenmediaengine@sha256:8f68be9510cdd78e328434dca2caee2cf67fb8c608f46550d36c64320198905b
 COPY Server.xml /opt/ovenmediaengine/bin/origin_conf/Server.xml
 ```
 
@@ -56,3 +56,11 @@ also copy its HTML, a small HTTP server and a startup script. fly.toml stays in
 the deployment directory and defines Machine resources and public ports.
 Neither deployment configuration nor the player belongs in the reusable base
 image. Deployments consume the published image and do not compile OME again.
+
+The first cold GitHub Actions build took about 32 minutes. It passed version
+and origin startup smoke tests before publishing. Build run:
+https://github.com/zacharyliu/OvenMediaEngine/actions/runs/37141647843
+
+The digest above was built from commit
+e6d9bed161abac9243e5f07a3c234d7e81579b05. Later documentation-only commits
+do not rebuild or change that image.
