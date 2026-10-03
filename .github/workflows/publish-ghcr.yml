@@ -71,7 +71,8 @@ jobs:
           docker run -d --name ome-smoke -e OME_HOST_IP=127.0.0.1 "$IMAGE:sha-$GITHUB_SHA"
           trap 'docker logs ome-smoke; docker rm -f ome-smoke' EXIT
           for attempt in $(seq 1 30); do
-            if docker logs ome-smoke 2>&1 | grep -q 'OvenMediaEngine is initialized'; then
+            if docker logs ome-smoke 2>&1 | grep -q 'All modules are initialized successfully'; then
+              sleep 2
               test "$(docker inspect --format '{{.State.Running}}' ome-smoke)" = true
               exit 0
             fi
