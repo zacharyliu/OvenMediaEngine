@@ -1,5 +1,7 @@
 # OvenMediaEngine
 
+This fork builds OME v0.21.0 with a 1,200-byte RTP packet budget using the upstream Dockerfile and publishes the image to GitHub Container Registry. See [patched image build and deployment instructions](PATCHED_IMAGE.md).
+
 [![GitHub release](https://img.shields.io/github/v/release/OvenMediaLabs/OvenMediaEngine?color=blue)](https://github.com/OvenMediaLabs/OvenMediaEngine/releases)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange)](LICENSE)
 [![Docker Build](https://img.shields.io/github/actions/workflow/status/OvenMediaLabs/OvenMediaEngine/docker-image-release-multi.yml?label=docker%20build)](https://github.com/OvenMediaLabs/OvenMediaEngine/actions/workflows/docker-image-release-multi.yml)
